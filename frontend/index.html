@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manim AI Animation Generator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+            max-width: 900px;
+            width: 100%;
+            padding: 40px;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+            text-align: center;
+        }
+
+        .subtitle {
+            color: #666;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+
+        .input-section {
+            margin-bottom: 30px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 10px;
+            color: #555;
+            font-weight: 500;
+        }
+
+        .prompt-input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .prompt-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .examples {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+
+        .example-btn {
+            background: #f5f5f5;
+            border: 1px solid #ddd;
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .example-btn:hover {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .generate-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 30px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.3s, box-shadow 0.3s;
+            display: block;
+            margin: 0 auto;
+        }
+
+        .generate-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        }
+
+        .generate-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .status-message {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            display: none;
+        }
+
+        .status-message.info {
+            background: #e3f2fd;
+            color: #1976d2;
+            border: 1px solid #90caf9;
+        }
+
+        .status-message.success {
+            background: #e8f5e9;
+            color: #2e7d32;
+            border: 1px solid #81c784;
+        }
+
+        .status-message.error {
+            background: #ffebee;
+            color: #c62828;
+            border: 1px solid #ef5350;
+        }
+
+        .results-section {
+            margin-top: 30px;
+            display: none;
+        }
+
+        .video-container {
+            background: #f8f8f8;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        video {
+            width: 100%;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .code-container {
+            background: #1e1e1e;
+            border-radius: 15px;
+            padding: 20px;
+            position: relative;
+        }
+
+        .code-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .code-title {
+            color: #fff;
+            font-weight: 600;
+        }
+
+        .copy-btn {
+            background: #444;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.3s;
+        }
+
+        .copy-btn:hover {
+            background: #555;
+        }
+
+        .copy-btn.copied {
+            background: #4caf50;
+        }
+
+        pre {
+            color: #f8f8f2;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            margin: 0;
+        }
+
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+            display: none;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .health-status {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 15px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 20px;
+            font-size: 14px;
+        }
+
+        .health-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #ccc;
+        }
+
+        .health-indicator.healthy {
+            background: #4caf50;
+            animation: pulse 2s infinite;
+        }
+
+        .health-indicator.unhealthy {
+            background: #f44336;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        @media (max-width: 600px) {
+            h1 { font-size: 2em; }
+            .container { padding: 20px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="health-status" id="healthStatus">
+        <div class="health-indicator" id="healthIndicator"></div>
+        <span id="healthText">Checking system...</span>
+    </div>
+
+    <div class="container">
+        <h1>🎬 Manim AI Generator</h1>
+        <p class="subtitle">Create beautiful mathematical animations with AI</p>
+
+        <div class="input-section">
+            <label for="prompt">Describe your animation:</label>
+            <textarea 
+                id="prompt" 
+                class="prompt-input" 
+                placeholder="E.g., Create an animation showing the Pythagorean theorem with a right triangle..."
+            ></textarea>
+            
+            <div class="examples">
+                <button class="example-btn" onclick="setExample('Show a circle transforming into a square')">
+                    Circle → Square
+                </button>
+                <button class="example-btn" onclick="setExample('Demonstrate the Pythagorean theorem')">
+                    Pythagorean Theorem
+                </button>
+                <button class="example-btn" onclick="setExample('Create sine and cosine wave animations')">
+                    Sine/Cosine Waves
+                </button>
+                <button class="example-btn" onclick="setExample('Animate a bouncing ball with physics')">
+                    Bouncing Ball
+                </button>
+                <button class="example-btn" onclick="setExample('Show the quadratic formula derivation')">
+                    Quadratic Formula
+                </button>
+            </div>
+        </div>
+
+        <button id="generateBtn" class="generate-btn" onclick="generateAnimation()">
+            Generate Animation
+        </button>
+
+        <div class="loader" id="loader"></div>
+        <div class="status-message" id="statusMessage"></div>
+
+        <div class="results-section" id="results">
+            <div class="video-container">
+                <video id="videoPlayer" controls></video>
+            </div>
+
+            <div class="code-container">
+                <div class="code-header">
+                    <span class="code-title">Generated Manim Code</span>
+                    <button class="copy-btn" onclick="copyCode()">Copy Code</button>
+                </div>
+                <pre id="codeDisplay"></pre>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Check system health on load
+        window.onload = function() {
+            checkHealth();
+        };
+
+        async function checkHealth() {
+            try {
+                const response = await fetch('/health');
+                const data = await response.json();
+                
+                const indicator = document.getElementById('healthIndicator');
+                const text = document.getElementById('healthText');
+                
+                if (data.status === 'healthy') {
+                    indicator.className = 'health-indicator healthy';
+                    text.textContent = 'System Ready';
+                } else {
+                    indicator.className = 'health-indicator unhealthy';
+                    text.textContent = 'Setup Required';
+                    
+                    // Show what's missing
+                    const missing = Object.entries(data.checks)
+                        .filter(([key, value]) => !value)
+                        .map(([key]) => key.replace('_', ' '))
+                        .join(', ');
+                    
+                    if (missing) {
+                        showStatus(`System check failed. Missing: ${missing}`, 'error');
+                    }
+                }
+            } catch (error) {
+                document.getElementById('healthIndicator').className = 'health-indicator unhealthy';
+                document.getElementById('healthText').textContent = 'Server Offline';
+                showStatus('Cannot connect to server. Make sure the backend is running.', 'error');
+            }
+        }
+
+        function setExample(text) {
+            document.getElementById('prompt').value = text;
+        }
+
+        async function generateAnimation() {
+            const prompt = document.getElementById('prompt').value.trim();
+            
+            if (!prompt) {
+                showStatus('Please enter a description for your animation', 'error');
+                return;
+            }
+
+            const btn = document.getElementById('generateBtn');
+            const loader = document.getElementById('loader');
+            const results = document.getElementById('results');
+            
+            // UI state for loading
+            btn.disabled = true;
+            btn.textContent = 'Generating...';
+            loader.style.display = 'block';
+            results.style.display = 'none';
+            showStatus('Generating your animation... This may take 10-30 seconds.', 'info');
+
+            try {
+                const response = await fetch('/generate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ prompt })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    // Success!
+                    showStatus('Animation generated successfully!', 'success');
+                    
+                    // Show video
+                    const video = document.getElementById('videoPlayer');
+                    video.src = data.video_url;
+                    video.load();
+                    
+                    // Show code
+                    document.getElementById('codeDisplay').textContent = data.manim_code;
+                    
+                    // Show results
+                    results.style.display = 'block';
+                    
+                    // Smooth scroll to results
+                    setTimeout(() => {
+                        results.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    }, 100);
+                } else {
+                    // Error from server
+                    const errorMsg = data.error || 'Failed to generate animation';
+                    const details = data.details ? `\nDetails: ${data.details.substring(0, 200)}...` : '';
+                    showStatus(errorMsg + details, 'error');
+                    
+                    // If we got code despite error, show it
+                    if (data.manim_code) {
+                        document.getElementById('codeDisplay').textContent = data.manim_code;
+                        results.style.display = 'block';
+                    }
+                }
+            } catch (error) {
+                showStatus(`Connection error: ${error.message}`, 'error');
+            } finally {
+                // Reset UI
+                btn.disabled = false;
+                btn.textContent = 'Generate Animation';
+                loader.style.display = 'none';
+            }
+        }
+
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('statusMessage');
+            statusDiv.textContent = message;
+            statusDiv.className = `status-message ${type}`;
+            statusDiv.style.display = 'block';
+            
+            // Auto-hide success messages
+            if (type === 'success') {
+                setTimeout(() => {
+                    statusDiv.style.display = 'none';
+                }, 5000);
+            }
+        }
+
+        function copyCode() {
+            const code = document.getElementById('codeDisplay').textContent;
+            navigator.clipboard.writeText(code).then(() => {
+                const btn = event.target;
+                btn.textContent = 'Copied!';
+                btn.classList.add('copied');
+                
+                setTimeout(() => {
+                    btn.textContent = 'Copy Code';
+                    btn.classList.remove('copied');
+                }, 2000);
+            }).catch(() => {
+                showStatus('Failed to copy code', 'error');
+            });
+        }
+
+        // Enter key support
+        document.getElementById('prompt').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && e.ctrlKey) {
+                generateAnimation();
+            }
+        });
+    </script>
+</body>
+</html>

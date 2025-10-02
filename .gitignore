@@ -1,0 +1,35 @@
+# Ignore environment variables
+.env
+
+# Ignore backend output folders
+backend/media/
+frontend/media/
+frontend/videos/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtualenvs
+.venv/
+venv/
+ENV/
+env/
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# IDE/editor configs
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
