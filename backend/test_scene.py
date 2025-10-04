@@ -6,7 +6,7 @@ print("Google GenerativeAI version:", genai.__version__)
 print("Python version:", sys.version)
 
 # Configure your API key
-genai.configure(api_key="AIzaSyDF7ygmvGWIdI6gEZtlAl6Rt9fC1GSCJsU")
+genai.configure(api_key="YOUR_API_KEY")
 
 # List available models (for debugging)
 try:
